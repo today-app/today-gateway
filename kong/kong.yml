@@ -1,0 +1,56 @@
+_format_version: "1.1"
+
+services:
+- name: json-placeholder-public
+  url: https://jsonplaceholder.typicode.com
+  routes:
+  - name: mock-json-public-route
+    paths:
+    - /mock-public
+
+- name: json-placeholder-protected
+  url: https://jsonplaceholder.typicode.com
+  routes:
+  - name: mock-json-protected-route
+    paths:
+    - /mock-protected
+  plugins:
+    - name: oauth2-token-introspection-request
+      config:
+        auth_method:  client_secret_basic                                        
+        auth_response_headers_to_forward:                                        
+        - sub                                                                    
+        - email                                                                  
+        client_id: community
+        client_secret: community-secret
+        token_introspect_url: http://host.docker.internal:5001/oauth/token/introspect 
+
+- name: community-protected
+  url: http://host.docker.internal:5002/
+  routes:
+  - name: community-protected-route
+    paths:
+    - /community
+  plugins:
+    - name: oauth2-token-introspection-request
+      config:
+        auth_method:  client_secret_basic                                        
+        auth_response_headers_to_forward:                                        
+        - sub                                                                    
+        - email                                                                  
+        client_id: community
+        client_secret: community-secret
+        token_introspect_url: http://host.docker.internal:5001/oauth/token/introspect 
+
+- name: kong-health-check
+  url: https://dummy-host
+  plugins:
+    - name: request-termination
+      config:
+        status_code: 200
+        message: ok
+  routes:
+    - name: kong-health-check-route
+      strip_path: false
+      paths:
+        - /healthz
